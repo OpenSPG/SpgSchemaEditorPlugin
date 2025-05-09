@@ -8,7 +8,7 @@
     <name>OpenSPG Schema Mark Language Highlighter</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="thundax@qq.com" url="https://github.com/thundax-lyp">Thundax</vendor>
+    <vendor email="thundax@qq.com" url="https://github.com/OpenSPG">OpenSPG</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -17,6 +17,7 @@
 
     <change-notes><![CDATA[
         <ul>
+            <li><b>version 0.0.8</b> support Concept Rule mark language</li>
             <li><b>version 0.0.7</b> support PyCharm</li>
             <li><b>version 0.0.6</b> relationship graph support self-edge</li>
             <li><b>version 0.0.5</b> add relationship graph preview</li>
@@ -61,6 +62,27 @@
 
         <colorSettingsPage
                 implementation="org.openspg.idea.schema.highlighter.SchemaColorSettingsPage"/>
+
+
+        <fileType
+                name="OpenSPG Schema Rule File"
+                implementationClass="org.openspg.idea.conceptRule.ConceptRuleFileType"
+                fieldName="INSTANCE"
+                language="OpenSPG Schema Rule"
+                extensions="rule"/>
+
+        <lang.parserDefinition
+                language="OpenSPG Schema Rule"
+                implementationClass="org.openspg.idea.conceptRule.grammar.ConceptRuleParserDefinition"/>
+
+        <lang.syntaxHighlighterFactory
+                language="OpenSPG Schema Rule"
+                implementationClass="org.openspg.idea.conceptRule.highlighter.ConceptRuleSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage
+                implementation="org.openspg.idea.conceptRule.highlighter.ConceptRuleColorSettingsPage"/>
+
+
 
         <annotator
                 language="OpenSPG Schema"

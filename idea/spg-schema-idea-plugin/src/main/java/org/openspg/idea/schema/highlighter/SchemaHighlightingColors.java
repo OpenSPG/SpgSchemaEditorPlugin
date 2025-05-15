@@ -17,7 +17,7 @@ public class SchemaHighlightingColors {
             TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ERROR", HighlighterColors.BAD_CHARACTER);
 
     public static final TextAttributesKey OPERATION_SIGN =
-            TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_OPERATION_SIGN", DefaultLanguageHighlighterColors.OPERATION_SIGN);
+            TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_OPERATOR", DefaultLanguageHighlighterColors.OPERATION_SIGN);
 
     public static final TextAttributesKey ENTITY_NAME =
             TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ENTITY_NAME", DefaultLanguageHighlighterColors.CLASS_NAME);

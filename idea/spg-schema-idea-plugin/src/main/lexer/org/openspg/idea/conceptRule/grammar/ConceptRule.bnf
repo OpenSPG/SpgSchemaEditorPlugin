@@ -1,0 +1,398 @@
+{
+    parserClass="org.openspg.idea.lang.parser.ConceptRuleParser"
+    parserUtilClass="org.openspg.idea.conceptRule.grammar.ConceptRuleParserUtil"
+
+    extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+    psiClassPrefix="ConceptRule"
+    psiImplClassSuffix="Impl"
+    psiPackage="org.openspg.idea.lang.psi"
+    psiImplPackage="org.openspg.idea.lang.psi.impl"
+
+    elementTypeHolderClass="org.openspg.idea.grammar.psi.ConceptRuleTypes"
+    elementTypeClass="org.openspg.idea.conceptRule.ConceptRuleElementType"
+    tokenTypeClass="org.openspg.idea.conceptRule.psi.ConceptRuleTokenType"
+
+    psiImplUtilClass="org.openspg.idea.conceptRule.psi.impl.ConceptRulePsiImplUtil"
+}
+
+ruleFile ::= item_*
+
+private item_ ::= rule_wrapper | namespace | EOL | reserved_keywords | debug_items_
+
+namespace ::= NAMESPACE_KEYWORD namespace_value {
+    methods=[getValue]
+}
+namespace_value ::= TEXT
+
+rule_wrapper ::= rule_wrapper_head (EOL WRAPPER_RULE_KEYWORD COLON EOL* OPEN_RULE_BLOCK rule_wrapper_body CLOSE_RULE_BLOCK)? {
+    methods=[getLabel]
+}
+rule_wrapper_head ::= rule_wrapper_title
+rule_wrapper_title ::= (RULE_WRAPPER_TEXT|COLON)+
+rule_wrapper_body ::= base_predicated_define*
+
+// all logic copy from file "openspg/KGDSL.g4"
+
+private debug_items_ ::= RESERVED
+private reserved_keywords ::= reserved_keywords_1 | reserved_keywords_2
+private reserved_keywords_1 ::= SEMICOLON | AS_KEYWORD | ALL_KEYWORD | SQL_KEYWORD | PATH_KEYWORD | MATCH_KEYWORD | RETURN_KEYWORD
+private reserved_keywords_2 ::= COMMENT_KEYWORD | PRIORITY_KEYWORD | DESCRIPTION_KEYWORD | DISTINCT_GET_KEYWORD | DEFINE_PRIORITY_KEYWORD
+
+//#############################################################################
+// 词法分析
+//#############################################################################
+//#############################################################################
+// 应用模式
+//#############################################################################
+//计算模式
+//    GraphStructure {
+//        path1: (s)-[p1:x]->(end:y)
+//    }
+//    Rule {
+//        R1('xxx'): path1
+//    }
+//    Action {
+//
+//    }
+base_rule_define ::= the_graph_structure the_rule? create_action?
+
+// define 模式
+//    Define (s:label1)-[p:label2]->(o:concept/concept1) {
+//        GraphStructure {
+//            path1: (s)-[p1:x]->(end:y)
+//        }
+//        Rule {
+//            R1('xxx'): path1
+//        }
+//        Action {
+//
+//        }
+//    }
+private base_predicated_define ::= the_define_structure
+
+//#############################################################################
+// Define 定义部分
+//#############################################################################
+the_define_structure ::= DEFINE_KEYWORD predicated_define LBRACE base_rule_define RBRACE
+predicated_define ::= node_pattern full_edge_pointing_right node_pattern {
+    methods=[getMajorLabel getMinorLabel]
+}
+
+//#############################################################################
+// graph structure 定义部分
+//#############################################################################
+the_graph_structure ::= graph_structure_head LBRACE graph_structure_define? RBRACE
+
+graph_structure_head ::= GRAPH_STRUCTURE_KEYWORD | STRUCTURE_KEYWORD
+
+private graph_structure_define ::= graph_structure_body | path_pattern_list
+
+// path pattern expression, for kgdsl 1.0
+graph_structure_body ::= graph_structure_one_line+
+
+graph_structure_one_line ::= define_edge | define_vertex
+
+// 定义边 start
+define_edge ::= define_one_edge
+
+private define_one_edge ::= vertex_from RIGHT_ARROW vertex_to (LBRACKET label_property_list RBRACKET)? (REPEAT_KEYWORD repeat_time)? ('as' edge_name)? | vertex_from BOTH_ARROW vertex_to (LBRACKET label_property_list RBRACKET)? (REPEAT_KEYWORD repeat_time)? ('as' edge_name)?
+
+repeat_time ::= (LPARENTH lower_bound COMMA upper_bound RPARENTH)
+
+vertex_from ::= vertex_name
+
+vertex_to ::= vertex_name
+
+edge_name ::= identifier
+// 定义边 end
+
+// 定义点 start
+define_vertex ::= define_one_vertex | define_multiple_vertex
+
+define_one_vertex ::= vertex_name (LBRACKET label_property_list RBRACKET)?
+
+define_multiple_vertex ::= vertex_name (COMMA vertex_name)* (LBRACKET label_property_list RBRACKET)?
+
+vertex_name ::= identifier
+
+label_property_list ::= label_name (COMMA label_name)* (COMMA property_key EQ property_value)* | property_key EQ property_value (COMMA property_key EQ property_value)*
+
+property_key ::= identifier
+
+property_value ::= numeric_literal | identifier | character_string_literal | parameter_value_specification
+
+// path pattern expression, for iso gql
+// path1: abc\n path2: a
+path_pattern_list ::= path_pattern+
+path_pattern ::= (path_condition? path_variable COLON )? path_pattern_expression
+path_condition ::= OPTIONAL_KEYWORD
+path_variable ::= identifier
+path_pattern_expression ::= element_pattern (COMMA element_pattern)*
+element_pattern ::= one_edge_pattern | node_pattern
+node_pattern ::= LPARENTH element_pattern_declaration_and_filler RPARENTH
+one_edge_pattern ::= node_pattern (edge_pattern  node_pattern)+
+edge_pattern ::= (full_edge_pattern|abbreviated_edge_pattern) graph_pattern_quantifier?
+
+full_edge_pattern ::= full_edge_pointing_right|full_edge_pointing_left|full_edge_any_direction
+full_edge_pointing_right ::= MINUS LBRACKET element_pattern_declaration_and_filler (edge_pattern_pernodelimit_clause)? RBRACKET RIGHT_ARROW
+full_edge_pointing_left ::= LEFT_ARROW_BRACKET element_pattern_declaration_and_filler (edge_pattern_pernodelimit_clause)? RBRACKET MINUS
+full_edge_any_direction ::= MINUS LBRACKET element_pattern_declaration_and_filler (edge_pattern_pernodelimit_clause)? RBRACKET MINUS
+
+edge_pattern_pernodelimit_clause ::= per_node_limit INTEGER_LITERAL
+per_node_limit ::= PER_NODE_LIMIT_KEYWORD
+graph_pattern_quantifier ::= QUEST | quantifier
+quantifier ::= LBRACE ( lower_bound )? COMMA ( upper_bound )? RBRACE
+lower_bound ::= INTEGER_LITERAL
+upper_bound ::= INTEGER_LITERAL
+abbreviated_edge_pattern ::= RIGHT_ARROW | LEFT_ARROW | MINUS
+
+element_lookup ::= COLON ( label_expression | linked_edge )?
+element_pattern_declaration_and_filler ::= element_variable_declaration? element_lookup? element_pattern_where_clause?
+element_variable_declaration ::= element_variable
+element_variable ::= identifier
+label_expression_lookup ::= VBAR label_name
+label_expression ::= label_name label_expression_lookup*
+
+// label_name ^_^
+// `TaxOfRiskApp`
+// `TaxOfRiskApp`.`Version`
+// `TaxOfRiskApp`/`赌博应用`
+// `TaxOfRiskApp`/`赌博应用`+`TaxOfRiskApp`/`赌博应用`
+label_name ::= combination_concept | concept_name | entity_type
+entity_type ::= identifier (DOT identifier)?
+concept_name ::= meta_concept_type DIV concept_instance_id
+meta_concept_type ::= identifier (DOT identifier)?
+concept_instance_id ::= ESCAPED_SYMBOLIC_NAME
+combination_concept ::= concept_name PLUS concept_name (PLUS concept_name)*
+
+linked_edge ::= function_expr
+
+element_pattern_where_clause ::= WHERE_KEYWORD search_condition
+search_condition ::= logic_value_expression
+
+//#############################################################################
+// rule 定义部分
+//#############################################################################
+the_rule ::= rule_head LBRACE rule_expression_body RBRACE
+
+rule_head ::= CONSTRAINT_KEYWORD | RULE_KEYWORD
+   
+rule_expression_body ::= rule_expression*
+// rule expression
+rule_expression ::= project_rule_expression | logic_rule_expression
+// project rule
+project_rule_expression ::= identifier (DOT property_name ) ? explain? EQ expression_set
+// logic rule
+logic_rule_expression ::= identifier explain? COLON expression_set
+
+// rule explain
+explain ::= LPARENTH unbroken_character_string_literal RPARENTH
+
+expression_set ::= value_expression|list_op_express|graph_group_op_express
+// 表达式
+value_expression ::= logic_value_expression|project_value_expression
+
+// list的聚合语法，支持链式表达风格 {variable}.op(k:do(k))?*
+list_op_express ::= value_expression (DOT list_op?)*
+
+list_op ::= list_common_agg_express | list_common_agg_if_express | list_filter_op_name | list_limit_op | list_get_op | list_slice_op | list_str_join_op | list_head_ele_op | list_tail_ele_op | list_nodes_op | list_edges_op | list_reduce_op | list_constraint_op | list_accumulate_op
+   
+
+list_common_agg_express ::= list_common_agg_name LPARENTH list_op_args RPARENTH
+list_op_args ::= value_expression
+
+
+list_common_agg_name ::= SUM_KEYWORD | AVG_KEYWORD | COUNT_KEYWORD | MIN_KEYWORD | MAX_KEYWORD
+
+list_common_agg_if_name ::= SUMIF_KEYWORD | AVGIF_KEYWORD | COUNTIF_KEYWORD | CONCATAGGIF_KEYWORD | MINIF_KEYWORD | MAXIF_KEYWORD
+
+order_op_name ::= DESC_KEYWORD | ASC_KEYWORD
+
+
+list_filter_op_name ::= IF_KEYWORD LPARENTH list_op_args RPARENTH
+
+list_common_agg_if_express ::= list_common_agg_if_chain_express | list_common_agg_if_one_express
+
+
+list_common_agg_if_chain_express ::= list_filter_op_name DOT list_common_agg_express
+
+list_common_agg_if_one_express ::= list_common_agg_if_name LPARENTH list_op_args (COMMA list_op_args)? RPARENTH
+
+list_order_op ::= order_op_name LPARENTH list_op_args RPARENTH
+
+
+list_limit_op ::= list_limit_op_all | list_order_and_limit
+
+list_limit_op_all ::= LIMIT_KEYWORD LPARENTH  INTEGER_LITERAL RPARENTH
+
+list_order_and_limit ::= list_order_op DOT list_limit_op_all
+
+// 索引参数
+index_parameter ::= INTEGER_LITERAL
+
+list_get_op ::= GET_KEYWORD LPARENTH index_parameter? RPARENTH
+
+list_slice_op ::= SLICE_KEYWORD LPARENTH? index_parameter? COMMA? index_parameter? RPARENTH?
+
+list_str_join_op ::= STR_JOIN_KEYWORD LPARENTH character_string_literal RPARENTH
+accumulate_support_op ::= PLUS | ASTERISK
+list_accumulate_op ::= ACCUMULATE_KEYWORD LPARENTH accumulate_support_op? RPARENTH
+
+list_head_ele_op ::= HEAD_KEYWORD LPARENTH integerLiteral_full? RPARENTH
+
+list_tail_ele_op ::= TAIL_KEYWORD LPARENTH integerLiteral_full? RPARENTH
+
+integerLiteral_full ::= MINUS? INTEGER_LITERAL
+
+list_nodes_op ::= NODES_KEYWORD LPARENTH RPARENTH
+list_edges_op ::= EDGES_KEYWORD LPARENTH RPARENTH
+
+list_reduce_op ::= REDUCE_KEYWORD LPARENTH lambda_expr COMMA value_expression RPARENTH
+list_constraint_op ::= 'constraint' LPARENTH lambda_expr RPARENTH
+
+//group的聚合风格 group(a,c).op(expr)
+group_op_fn ::= GROUP_KEYWORD
+graph_group_op_express ::= group_op_fn LPARENTH graph_alias_element_list RPARENTH (DOT graph_op )*
+
+graph_op ::= graph_common_agg_lookup | graph_common_agg_udf_express | graph_common_agg_express | graph_common_agg_if_express | graph_order_and_slice_op | graph_filter_op
+   
+// 占位符
+graph_common_agg_lookup ::= function_name LPARENTH? RPARENTH?
+graph_common_agg_udf_express ::= function_name LPARENTH graph_alias (DOT property_name)? (COMMA function_args)? RPARENTH
+graph_common_agg_express ::= graph_common_agg_name LPARENTH graph_alias (DOT property_name)? RPARENTH
+graph_common_agg_name ::= SUM_KEYWORD | AVG_KEYWORD | COUNT_KEYWORD | MIN_KEYWORD | MAX_KEYWORD
+
+
+graph_common_agg_if_name ::= SUMIF_KEYWORD | AVGIF_KEYWORD | COUNTIF_KEYWORD | CONCATAGGIF_KEYWORD | MINIF_KEYWORD | MAXIF_KEYWORD
+
+graph_common_agg_if_express ::= graph_common_agg_if_chain_express | graph_common_agg_if_one_express
+
+
+graph_common_agg_if_chain_express ::= graph_filter_op DOT graph_common_agg_express
+
+graph_common_agg_if_one_express ::= graph_common_agg_if_name LPARENTH value_expression COMMA graph_alias (DOT property_name)? RPARENTH
+
+graph_order_op ::= order_op_name LPARENTH graph_alias (DOT property_name)? RPARENTH
+graph_order_and_slice_op ::= graph_order_op DOT graph_limit_op
+graph_limit_op ::= LIMIT_KEYWORD LPARENTH INTEGER_LITERAL RPARENTH
+graph_filter_op ::= IF_KEYWORD LPARENTH value_expression RPARENTH
+graph_alias ::= identifier
+graph_alias_with_property ::= graph_alias (DOT property_name)?
+graph_alias_element_list ::= graph_alias_with_property ( COMMA graph_alias_with_property )*
+
+
+//#############################################################################
+// graph structure 定义部分
+//#############################################################################
+
+create_action_symbol::= ACTION_KEYWORD
+create_action ::= create_action_symbol LBRACE create_action_body* RBRACE
+
+create_action_body ::= add_node | add_edge
+
+add_edge ::= ADD_EDGE_KEYWORD LPARENTH  add_edge_param COMMA  add_edge_param COMMA add_type COMMA add_props RPARENTH
+   
+add_type ::= identifier EQ label_expression
+   
+add_edge_param ::= identifier EQ identifier
+   
+add_props ::= identifier EQ complex_obj_expr
+   
+add_node ::= (identifier EQ)? ADD_NODE_KEYWORD LPARENTH add_type COMMA add_props RPARENTH
+
+
+// rule 表达式
+and ::= AND_KEYWORD | ANDAND
+or ::= OR_KEYWORD | OROR
+not ::= NOT_KEYWORD | EXCL
+xor ::= XOR_KEYWORD
+value_expression_primary ::= parenthesized_value_expression | non_parenthesized_value_expression_primary_with_property
+parenthesized_value_expression ::= LPARENTH value_expression RPARENTH
+non_parenthesized_value_expression_primary_with_property ::= non_parenthesized_value_expression_primary (DOT property_name)*
+non_parenthesized_value_expression_primary ::= function_expr| unsigned_value_specification | binding_variable
+property_name ::= identifier
+
+binding_variable ::= binding_variable_name
+binding_variable_name ::= identifier
+
+unsigned_value_specification ::= unsigned_literal|parameter_value_specification
+unsigned_literal ::= unsigned_numeric_literal|general_literal
+general_literal ::= predefined_type_literal|list_literal
+predefined_type_literal ::= boolean_literal|character_string_literal
+boolean_literal ::= truth_value
+character_string_literal ::= unbroken_character_string_literal ( separator unbroken_character_string_literal )*
+
+parameter_value_specification ::= DOLLAR_SYMBOL identifier
+
+list_literal ::= LBRACKET list_element_list RBRACKET
+list_element_list ::= list_element ( COMMA list_element )*
+list_element ::= value_expression
+
+
+// rule operator
+expr ::= binary_expr | unary_expr | function_expr
+binary_expr ::= project_value_expression (binary_op project_value_expression)?
+binary_op ::= EQ | EQEQ | NE | LESS_THAN | GT | LE | GE | LIKE_KEYWORD | RLIKE_KEYWORD | IN_KEYWORD
+unary_expr ::= unary_op LPARENTH value_expression RPARENTH
+
+unary_op ::= EXIST_KEYWORD | ABS_KEYWORD | FLOOR_KEYWORD | CEIL_KEYWORD
+
+function_expr ::= function_name LPARENTH function_args? RPARENTH
+function_name ::= identifier | list_common_agg_name
+function_args ::= list_element_list
+
+lambda_expr ::= LPARENTH binary_lambda_args RPARENTH LAMBDA_ARROW value_expression
+binary_lambda_args ::= identifier COMMA identifier
+
+// 逻辑 计算
+logic_value_expression ::= logic_term (or logic_term)*
+logic_term ::= logic_item (and logic_item)*
+logic_item ::= logic_factor (xor logic_factor)*
+logic_factor ::= (not)? logic_test
+logic_test ::= (spo_rule | concept_name | expr) ( (IS_KEYWORD ( NOT_LATTER_KEYWORD )?|EQEQ|NE) truth_value )?
+truth_value ::= TRUE_KEYWORD|FALSE_KEYWORD|NULL_KEYWORD
+
+// 数值计算
+unsigned_numeric_literal ::= numeric_literal
+sign ::= PLUS|MINUS
+
+complex_obj_expr ::= LBRACE assignment_expression* RBRACE
+
+assignment_expression ::= identifier EQ expression_set
+
+project_value_expression ::= term (PLUS term| MINUS term) *
+term ::= factor (ASTERISK factor| DIV factor| PERC factor)*
+factor ::= ( sign )? project_primary
+project_primary ::= concept_name | value_expression_primary|numeric_value_function
+
+//数值计算函数
+numeric_value_function ::= absolute_value_expression | floor_function | ceiling_function
+
+absolute_value_expression ::= ABS_KEYWORD LPARENTH project_value_expression RPARENTH
+floor_function ::= FLOOR_KEYWORD LPARENTH project_value_expression RPARENTH
+ceiling_function ::= CEIL_KEYWORD LPARENTH project_value_expression RPARENTH
+
+
+separator ::= ( comment|whitespace )+
+whitespace ::= WHITESPACE
+comment ::= Comment
+
+// 完整字符串定义
+unbroken_character_string_literal ::= STRING_LITERAL
+
+// 数字类型定义
+numeric_literal ::= FLOAT_LITERAL | INTEGER_LITERAL
+
+// 符号变量定义
+identifier ::= UNESCAPED_SYMBOLIC_NAME | ESCAPED_SYMBOLIC_NAME
+
+WHITESPACE ::= SPACE | TAB | LF | VT | FF | CR | FS | GS | RS | US | '\u1680' | '\u180e' | '\u2000' | '\u2001' | '\u2002' | '\u2003' | '\u2004' | '\u2005' | '\u2006' | '\u2008' | '\u2009' | '\u200a' | '\u2028' | '\u2029' | '\u205f' | '\u3000' | '\u00a0' | '\u2007' | '\u202f' | Comment
+
+Comment ::= BLOCK_COMMENT | LINE_COMMENT
+
+// ################################################ Simplify DSL ################################################
+
+spo_rule ::= node_pattern MINUS rule_name_declaration RIGHT_ARROW node_pattern
+
+rule_name_declaration ::= LBRACKET element_pattern_declaration_and_filler RBRACKET

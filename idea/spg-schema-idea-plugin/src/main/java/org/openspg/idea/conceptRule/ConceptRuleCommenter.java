@@ -7,7 +7,7 @@ final class ConceptRuleCommenter implements Commenter {
 
     @Override
     public String getLineCommentPrefix() {
-        return "#";
+        return "//";
     }
 
     @Override

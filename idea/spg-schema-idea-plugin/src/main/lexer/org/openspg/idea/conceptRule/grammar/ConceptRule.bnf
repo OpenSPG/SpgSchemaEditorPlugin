@@ -18,19 +18,17 @@
 
 ruleFile ::= item_*
 
-private item_ ::= rule_wrapper | namespace | EOL | reserved_keywords | debug_items_
+private item_ ::= namespace | rule_wrapper | LINE_COMMENT | BLOCK_COMMENT | EOL | reserved_keywords | debug_items_
 
 namespace ::= NAMESPACE_KEYWORD namespace_value {
     methods=[getValue]
 }
 namespace_value ::= TEXT
 
-rule_wrapper ::= rule_wrapper_head (EOL WRAPPER_RULE_KEYWORD COLON EOL* OPEN_RULE_BLOCK rule_wrapper_body CLOSE_RULE_BLOCK)? {
-    methods=[getLabel]
-}
-rule_wrapper_head ::= rule_wrapper_title
-rule_wrapper_title ::= (RULE_WRAPPER_TEXT|COLON)+
-rule_wrapper_body ::= base_predicated_define*
+rule_wrapper ::= rule_wrapper_head (EOL rule_wrapper_body)?
+rule_wrapper_head ::= rule_wrapper_pattern
+rule_wrapper_pattern ::= (label_expression (COLON label_expression)+) | (label_expression COLON)
+rule_wrapper_body ::= WRAPPER_RULE_KEYWORD COLON EOL* OPEN_RULE_BLOCK base_predicated_define* CLOSE_RULE_BLOCK
 
 // all logic copy from file "openspg/KGDSL.g4"
 
@@ -151,8 +149,8 @@ element_lookup ::= COLON ( label_expression | linked_edge )?
 element_pattern_declaration_and_filler ::= element_variable_declaration? element_lookup? element_pattern_where_clause?
 element_variable_declaration ::= element_variable
 element_variable ::= identifier
-label_expression_lookup ::= VBAR label_name
 label_expression ::= label_name label_expression_lookup*
+private label_expression_lookup ::= VBAR label_name
 
 // label_name ^_^
 // `TaxOfRiskApp`
@@ -163,8 +161,10 @@ label_name ::= combination_concept | concept_name | entity_type
 entity_type ::= identifier (DOT identifier)?
 concept_name ::= meta_concept_type DIV concept_instance_id
 meta_concept_type ::= identifier (DOT identifier)?
-concept_instance_id ::= ESCAPED_SYMBOLIC_NAME
-combination_concept ::= concept_name PLUS concept_name (PLUS concept_name)*
+concept_instance_id ::= ESCAPED_SYMBOLIC_NAME {
+    methods=[getLabel]
+}
+private combination_concept ::= concept_name PLUS concept_name (PLUS concept_name)*
 
 linked_edge ::= function_expr
 
@@ -373,10 +373,7 @@ absolute_value_expression ::= ABS_KEYWORD LPARENTH project_value_expression RPAR
 floor_function ::= FLOOR_KEYWORD LPARENTH project_value_expression RPARENTH
 ceiling_function ::= CEIL_KEYWORD LPARENTH project_value_expression RPARENTH
 
-
-separator ::= ( comment|whitespace )+
-whitespace ::= WHITESPACE
-comment ::= Comment
+separator ::= ( WHITESPACE )+
 
 // 完整字符串定义
 unbroken_character_string_literal ::= STRING_LITERAL
@@ -385,11 +382,11 @@ unbroken_character_string_literal ::= STRING_LITERAL
 numeric_literal ::= FLOAT_LITERAL | INTEGER_LITERAL
 
 // 符号变量定义
-identifier ::= UNESCAPED_SYMBOLIC_NAME | ESCAPED_SYMBOLIC_NAME
+identifier ::= UNESCAPED_SYMBOLIC_NAME | ESCAPED_SYMBOLIC_NAME {
+    methods=[getLabel]
+}
 
 WHITESPACE ::= SPACE | TAB | LF | VT | FF | CR | FS | GS | RS | US | '\u1680' | '\u180e' | '\u2000' | '\u2001' | '\u2002' | '\u2003' | '\u2004' | '\u2005' | '\u2006' | '\u2008' | '\u2009' | '\u200a' | '\u2028' | '\u2029' | '\u205f' | '\u3000' | '\u00a0' | '\u2007' | '\u202f' | Comment
-
-Comment ::= BLOCK_COMMENT | LINE_COMMENT
 
 // ################################################ Simplify DSL ################################################
 

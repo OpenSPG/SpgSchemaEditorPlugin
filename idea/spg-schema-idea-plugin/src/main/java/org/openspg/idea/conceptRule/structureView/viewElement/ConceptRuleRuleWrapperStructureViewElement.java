@@ -3,15 +3,13 @@ package org.openspg.idea.conceptRule.structureView.viewElement;
 import com.intellij.ide.projectView.PresentationData;
 import com.intellij.ide.util.treeView.smartTree.TreeElement;
 import com.intellij.psi.util.PsiTreeUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.lang.psi.ConceptRuleRuleWrapper;
-import org.openspg.idea.lang.psi.ConceptRuleRuleWrapperBody;
-import org.openspg.idea.lang.psi.ConceptRuleTheDefineStructure;
+import org.openspg.idea.lang.psi.*;
 import org.openspg.idea.schema.SchemaIcons;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ConceptRuleRuleWrapperStructureViewElement extends AbstractConceptRuleStructureViewElement<ConceptRuleRuleWrapper> {
@@ -22,7 +20,7 @@ public class ConceptRuleRuleWrapperStructureViewElement extends AbstractConceptR
 
     @Override
     public String getNullableAlphaSortKey() {
-        return myElement.getLabel();
+        return myElement.getRuleWrapperHead().getRuleWrapperPattern().getText();
     }
 
     @Override
@@ -30,25 +28,48 @@ public class ConceptRuleRuleWrapperStructureViewElement extends AbstractConceptR
         List<String> labels = new ArrayList<>();
         List<String> locations = new ArrayList<>();
 
-        Stream.of(element.getLabel().split(":"))
-                .map(label -> Stream.of(label.split("/"))
-                        .map(String::trim)
-                        .map(x -> StringUtils.unwrap(x, "`"))
-                        .map(x -> StringUtils.unwrap(x, "'"))
-                        .map(x -> StringUtils.unwrap(x, "\""))
-                        .toList())
-                .forEach(texts -> {
-                    if (!texts.isEmpty()) {
-                        labels.add(texts.get(0));
+        myElement.getRuleWrapperHead()
+                .getRuleWrapperPattern()
+                .getLabelExpressionList()
+                .stream()
+                .flatMap(x -> x.getLabelNameList().stream())
+                .flatMap(labelNameElement -> {
+                    if (labelNameElement.getEntityType() != null) {
+                        return Stream.of(labelNameElement.getEntityType());
                     }
-                    if (texts.size() > 1) {
-                        locations.add(texts.get(1));
+                    return labelNameElement.getConceptNameList().stream();
+                })
+                .forEach(psiElement -> {
+                    if (psiElement instanceof ConceptRuleEntityType entityType) {
+                        String label = entityType.getIdentifierList()
+                                .stream()
+                                .map(ConceptRuleIdentifier::getLabel)
+                                .collect(Collectors.joining("."));
+                        if (labels.isEmpty()) {
+                            labels.add(label);
+                        } else {
+                            locations.add(label);
+                        }
+
+                    } else if (psiElement instanceof ConceptRuleConceptName conceptName) {
+                        String label = conceptName.getMetaConceptType()
+                                .getIdentifierList()
+                                .stream()
+                                .map(ConceptRuleIdentifier::getLabel)
+                                .collect(Collectors.joining("."));
+                        String instanceId = conceptName.getConceptInstanceId().getLabel();
+                        if (labels.isEmpty()) {
+                            labels.add(label);
+                            locations.add(instanceId);
+                        } else {
+                            locations.add("(" + label + " / " + instanceId + ")");
+                        }
                     }
                 });
 
         return new PresentationData(
-                String.join("/", labels),
-                String.join("/", locations),
+                String.join(" ", labels),
+                String.join(" ", locations),
                 SchemaIcons.Nodes.Entity,
                 null
         );

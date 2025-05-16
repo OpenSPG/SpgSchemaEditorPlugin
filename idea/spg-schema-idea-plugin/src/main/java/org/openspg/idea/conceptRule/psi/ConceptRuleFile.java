@@ -22,7 +22,7 @@ public class ConceptRuleFile extends PsiFileBase {
 
     @Override
     public String toString() {
-        return "OpenSPG Schema Rule File";
+        return "OpenSPG Concept Rule File";
     }
 
 }

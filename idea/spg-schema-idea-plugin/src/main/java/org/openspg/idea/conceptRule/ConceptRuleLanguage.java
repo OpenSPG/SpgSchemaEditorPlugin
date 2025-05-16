@@ -7,7 +7,7 @@ public final class ConceptRuleLanguage extends Language {
     public static final ConceptRuleLanguage INSTANCE = new ConceptRuleLanguage();
 
     private ConceptRuleLanguage() {
-        super("OpenSPG Schema Rule");
+        super("OpenSPG Concept Rule");
     }
 
 }

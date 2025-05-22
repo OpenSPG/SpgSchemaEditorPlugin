@@ -31,14 +31,13 @@ public final class ConceptRuleParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public TokenSet getCommentTokens() {
-        return TokenSet.create(ConceptRuleTypes.COMMENT);
+        return TokenSet.create(ConceptRuleTypes.LINE_COMMENT, ConceptRuleTypes.BLOCK_COMMENT);
     }
 
     @NotNull
     @Override
     public TokenSet getWhitespaceTokens() {
-        //return TokenSet.WHITE_SPACE;
-        return TokenSet.create(TokenType.WHITE_SPACE, TokenType.BAD_CHARACTER);
+        return TokenSet.create(TokenType.WHITE_SPACE, TokenType.NEW_LINE_INDENT, TokenType.BAD_CHARACTER);
     }
 
     @NotNull

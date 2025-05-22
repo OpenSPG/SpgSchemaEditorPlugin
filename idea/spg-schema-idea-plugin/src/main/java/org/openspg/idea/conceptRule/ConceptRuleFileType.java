@@ -17,13 +17,13 @@ public final class ConceptRuleFileType extends LanguageFileType {
     @NotNull
     @Override
     public String getName() {
-        return "OpenSPG Schema Rule File";
+        return "OpenSPG Concept Rule File";
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "OpenSPG Schema rule file";
+        return "OpenSPG Concept rule file";
     }
 
     @NotNull

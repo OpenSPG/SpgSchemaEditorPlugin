@@ -5,8 +5,8 @@ import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.grammar.psi.SchemaTypes;
 import org.openspg.idea.schema.SchemaLanguage;
+import org.openspg.idea.schema.grammar.psi.SchemaTypes;
 
 public final class SchemaFormattingModelBuilder implements FormattingModelBuilder {
 
@@ -29,7 +29,7 @@ public final class SchemaFormattingModelBuilder implements FormattingModelBuilde
         CommonCodeStyleSettings commonSetting = settings.getCommonSettings(SchemaLanguage.INSTANCE.getID());
 
         SpacingBuilder builder = new SpacingBuilder(settings, SchemaLanguage.INSTANCE);
-        builder = builder.after(SchemaTypes.NAMESPACE_MARKER).spaces(1);
+        builder = builder.after(SchemaTypes.NAMESPACE_KEYWORD).spaces(1);
 
         int blankLinesAfterNamespace = Math.max(0, commonSetting.BLANK_LINES_AFTER_PACKAGE) + 1;
         builder = builder.after(TokenSet.create(SchemaTypes.NAMESPACE))
@@ -46,12 +46,12 @@ public final class SchemaFormattingModelBuilder implements FormattingModelBuilde
         boolean spaceAroundBrackets = commonSetting.SPACE_WITHIN_BRACKETS;
         if (spaceAroundBrackets) {
             builder = builder
-                    .before(SchemaTypes.OPEN_BRACKET).spaces(1)
-                    .after(SchemaTypes.CLOSE_BRACKET).spaces(1);
+                    .before(SchemaTypes.DOUBLE_LBRACKET).spaces(1)
+                    .after(SchemaTypes.DOUBLE_RBRACKET).spaces(1);
         } else {
             builder = builder
-                    .around(SchemaTypes.OPEN_BRACKET).spaces(0)
-                    .around(SchemaTypes.CLOSE_BRACKET).spaces(0);
+                    .around(SchemaTypes.DOUBLE_LBRACKET).spaces(0)
+                    .around(SchemaTypes.DOUBLE_RBRACKET).spaces(0);
         }
 
         //.after(TokenSet.create(
@@ -106,7 +106,7 @@ public final class SchemaFormattingModelBuilder implements FormattingModelBuilde
         boolean spaceAfterColon = settings.SPACE_AFTER_COLON;
         boolean spaceBeforeColon = settings.SPACE_BEFORE_COLON;
 
-        TokenSet tokenSet = TokenSet.create(SchemaTypes.COLON, SchemaTypes.INHERITED);
+        TokenSet tokenSet = TokenSet.create(SchemaTypes.COLON, SchemaTypes.RIGHT_ARROW);
         if (spaceBeforeColon && !spaceAfterColon) {
             builder = builder.before(tokenSet).spaces(1);
         } else if (spaceBeforeColon) {

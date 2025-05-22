@@ -7,29 +7,30 @@ import com.intellij.psi.formatter.common.AbstractBlock;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.openspg.idea.lang.psi.SchemaPlainText;
+import org.openspg.idea.schema.lang.psi.SchemaPlainTextBlock;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import static org.openspg.idea.grammar.psi.SchemaTypes.EOL;
 
 public class SchemaBlock extends AbstractBlock {
 
-    private static final Set<IElementType> NONBLOCK_ELEMENT_TYPES = new HashSet<>(Arrays.asList(
-            TokenType.WHITE_SPACE, EOL
-    ));
+    private static final Set<IElementType> NONBLOCK_ELEMENT_TYPES = Set.of(
+            TokenType.WHITE_SPACE
+    );
 
-    private final SpacingBuilder spacingBuilder;
+    private final SpacingBuilder mySpacingBuilder;
 
     protected SchemaBlock(@NotNull ASTNode node, @Nullable Wrap wrap, @Nullable Alignment alignment, SpacingBuilder spacingBuilder) {
         super(node, wrap, alignment);
-        this.spacingBuilder = spacingBuilder;
+        mySpacingBuilder = spacingBuilder;
     }
 
     @Override
     protected List<Block> buildChildren() {
         List<Block> blocks = new ArrayList<>();
-        if (myNode.getPsi() instanceof SchemaPlainText) {
+        if (myNode.getPsi() instanceof SchemaPlainTextBlock) {
             return blocks;
         }
 
@@ -41,7 +42,7 @@ public class SchemaBlock extends AbstractBlock {
                         child,
                         Wrap.createWrap(WrapType.NONE, false),
                         Alignment.createAlignment(),
-                        spacingBuilder
+                        mySpacingBuilder
                 ));
             }
             child = child.getTreeNext();
@@ -58,12 +59,12 @@ public class SchemaBlock extends AbstractBlock {
     @Nullable
     @Override
     public Spacing getSpacing(@Nullable Block firstChild, @NotNull Block secondChild) {
-        return spacingBuilder.getSpacing(this, firstChild, secondChild);
+        return mySpacingBuilder.getSpacing(this, firstChild, secondChild);
     }
 
     @Override
     public boolean isLeaf() {
-        return myNode.getPsi() instanceof SchemaPlainText || myNode.getFirstChildNode() == null;
+        return myNode.getPsi() instanceof SchemaPlainTextBlock || myNode.getFirstChildNode() == null;
     }
 
 }

@@ -33,9 +33,10 @@ public class ConceptRuleStructureAwareNavbar extends StructureAwareNavBarModelEx
         }
 
         if (object instanceof ConceptRuleRuleWrapper) {
+            //TODO
             return ((ConceptRuleRuleWrapper) object)
                     .getRuleWrapperHead()
-                    .getRuleWrapperTitle()
+                    .getRuleWrapperPattern()
                     .getText();
         }
 

@@ -39,7 +39,7 @@ import java.security.cert.CertificateRevokedException;
 
 // NB !(!a|b) is "a - b"
 // From the spec
-IDENTIFIER =                    [:jletter:] [:jletterdigit:]*
+IDENTIFIER = [:jletter:] [:jletterdigit:]*
 
 DIGIT = [0-9]
 DIGIT_OR_UNDERSCORE = [_0-9]
@@ -60,7 +60,8 @@ HEX_FP_LITERAL = {HEX_SIGNIFICAND} {HEX_EXPONENT}
 HEX_SIGNIFICAND = 0 [Xx] ({HEX_DIGIT_OR_UNDERSCORE}+ "."? | {HEX_DIGIT_OR_UNDERSCORE}* "." {HEX_DIGIT_OR_UNDERSCORE}+)
 HEX_EXPONENT = [Pp] [+-]? {DIGIT_OR_UNDERSCORE}*
 
-LINE_COMMENT = "//"[^\n]*
+LINE = [^\n]*
+LINE_COMMENT = "//"{LINE}
 BLOCK_COMMENT = "/"\*([^*]|\*+[^*/])*(\*+"/")?
 DOUBLE_QUOTED_STRING = \"([^\\\"\r\n]|\\[^\r\n])*\"?
 SINGLE_QUOTED_STRING = '([^\\'\r\n]|\\[^\r\n])*'?
@@ -69,14 +70,6 @@ EOL =                           "\n"
 WHITE_SPACE_CHAR =              [ \t\f]
 WHITE_SPACE =                   {WHITE_SPACE_CHAR}+
 
-LINE =                          [^\n]*
-
-// Schema spec: when a comment follows another syntax element,
-//  it must be separated from it by space characters.
-// See http://www.yaml.org/spec/1.2/spec.html#comment
-
-COMMENT =                       "#"{LINE}
-
 ESCAPED_SYMBOLIC_NAME =         \`[^`]*\`
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,10 +77,7 @@ ESCAPED_SYMBOLIC_NAME =         \`[^`]*\`
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Main states
-%xstate RULE_STATE
-
-// Small technical one-token states
-%xstate NAMESPACE_STATE, LINE_COMMENT_STATE, ERROR_STATE
+%xstate NAMESPACE_STATE, RULE_STATE
 
 %%
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +98,7 @@ ESCAPED_SYMBOLIC_NAME =         \`[^`]*\`
 <YYINITIAL> {
     {EOL}     { return EOL;     }
     ":"       { return COLON;   }
+    "/"       { return DIV;   }
     [Rr][Uu][Ll][Ee]    { return WRAPPER_RULE_KEYWORD; }
 
     "namespace" {
@@ -119,10 +110,10 @@ ESCAPED_SYMBOLIC_NAME =         \`[^`]*\`
           return OPEN_RULE_BLOCK;
       }
 
-    {DOUBLE_QUOTED_STRING}   { return RULE_WRAPPER_TEXT; }
-    {SINGLE_QUOTED_STRING}   { return RULE_WRAPPER_TEXT; }
-    {ESCAPED_SYMBOLIC_NAME}  { return RULE_WRAPPER_TEXT; }
-    [^\s\n\[\`\'\":]+        { return RULE_WRAPPER_TEXT; }
+    {DOUBLE_QUOTED_STRING}   { return ESCAPED_SYMBOLIC_NAME; }
+    {SINGLE_QUOTED_STRING}   { return ESCAPED_SYMBOLIC_NAME; }
+    {ESCAPED_SYMBOLIC_NAME}  { return ESCAPED_SYMBOLIC_NAME; }
+    {IDENTIFIER}             { return UNESCAPED_SYMBOLIC_NAME; }
 
     [^] {
           return TokenType.BAD_CHARACTER;
@@ -162,7 +153,7 @@ ESCAPED_SYMBOLIC_NAME =         \`[^`]*\`
 //-------------------------------------------------------------------------------------------------------------------
 // rulue block
 <RULE_STATE> {
-    {EOL}                   { return TokenType.WHITE_SPACE; }
+    {EOL}                   { return TokenType.NEW_LINE_INDENT; }
 
     "]]" {
           yybegin(YYINITIAL);

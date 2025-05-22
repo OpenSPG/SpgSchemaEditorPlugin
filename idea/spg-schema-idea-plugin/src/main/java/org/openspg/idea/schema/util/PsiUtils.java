@@ -6,11 +6,11 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.grammar.psi.SchemaTypes;
-import org.openspg.idea.lang.psi.SchemaEntity;
-import org.openspg.idea.lang.psi.SchemaEntityInfo;
-import org.openspg.idea.lang.psi.SchemaNamespace;
-import org.openspg.idea.lang.psi.SchemaPlainText;
+import org.openspg.idea.schema.grammar.psi.SchemaTypes;
+import org.openspg.idea.schema.lang.psi.SchemaEntity;
+import org.openspg.idea.schema.lang.psi.SchemaEntityHead;
+import org.openspg.idea.schema.lang.psi.SchemaNamespace;
+import org.openspg.idea.schema.lang.psi.SchemaPlainTextBlock;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,7 +63,7 @@ public class PsiUtils {
 
         PsiElement psiElement = node.getPsi().getNextSibling();
         while (psiElement != null) {
-            if (psiElement instanceof SchemaPlainText
+            if (psiElement instanceof SchemaPlainTextBlock
                     || psiElement.getNode().getElementType() != SchemaTypes.COMMENT) {
                 result.append(psiElement.getText());
             }
@@ -75,8 +75,8 @@ public class PsiUtils {
     public static SchemaEntity findEntityByName(@NotNull PsiFile file, @NotNull String entityName) {
         Collection<SchemaEntity> entities = PsiTreeUtil.findChildrenOfType(file, SchemaEntity.class);
         for (SchemaEntity entity : entities) {
-            SchemaEntityInfo info = entity.getEntityInfo();
-            if (entityName.equals(info.getEntityName())) {
+            SchemaEntityHead head = entity.getEntityHead();
+            if (entityName.equals(head.getBasicStructureDeclaration().getStructureNameDeclaration().getText())) {
                 return entity;
             }
         }

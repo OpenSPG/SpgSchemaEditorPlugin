@@ -17,6 +17,7 @@
 
     <change-notes><![CDATA[
         <ul>
+            <li><b>version 0.0.10</b> RuleML: add formatter and commenter</li>
             <li><b>version 0.0.9</b> RuleML: add structure view</li>
             <li><b>version 0.0.8</b> RuleML: support Concept-Rule mark language</li>
             <li><b>version 0.0.7</b> SchemaML: support PyCharm IDE</li>
@@ -33,10 +34,6 @@
     <extensionPoints>
         <extensionPoint qualifiedName="org.openspg.schema.previewEditorProvider"
                         interface="com.intellij.openapi.fileEditor.FileEditorProvider"
-                        dynamic="true"/>
-
-        <extensionPoint qualifiedName="org.openspg.schema.htmlPanelProvider"
-                        interface="org.openspg.idea.schema.ui.editor.SchemaHtmlPanelProvider"
                         dynamic="true"/>
     </extensionPoints>
 
@@ -58,6 +55,10 @@
                 language="OpenSPG Schema"
                 implementationClass="org.openspg.idea.schema.grammar.SchemaParserDefinition"/>
 
+        <annotator
+                language="OpenSPG Schema"
+                implementationClass="org.openspg.idea.schema.annotator.SchemaAnnotator"/>
+
         <lang.syntaxHighlighterFactory
                 language="OpenSPG Schema"
                 implementationClass="org.openspg.idea.schema.highlighter.SchemaSyntaxHighlighterFactory"/>
@@ -69,60 +70,11 @@
                 language="OpenSPG Schema"
                 implementationClass="org.openspg.idea.schema.structureView.SchemaStructureViewFactory"/>
 
-        <navbar implementation="org.openspg.idea.schema.structureView.SchemaStructureAwareNavbar"/>
-
-        <!-- SchemaML: end -->
-
-        <!-- ConceptRuleML: begin -->
-        <fileType
-                name="OpenSPG Schema Rule File"
-                implementationClass="org.openspg.idea.conceptRule.ConceptRuleFileType"
-                fieldName="INSTANCE"
-                language="OpenSPG Schema Rule"
-                extensions="rule"/>
-
-        <lang.parserDefinition
-                language="OpenSPG Schema Rule"
-                implementationClass="org.openspg.idea.conceptRule.grammar.ConceptRuleParserDefinition"/>
-
-        <lang.syntaxHighlighterFactory
-                language="OpenSPG Schema Rule"
-                implementationClass="org.openspg.idea.conceptRule.highlighter.ConceptRuleSyntaxHighlighterFactory"/>
-
-        <colorSettingsPage
-                implementation="org.openspg.idea.conceptRule.highlighter.ConceptRuleColorSettingsPage"/>
-
-        <lang.psiStructureViewFactory
-                language="OpenSPG Schema Rule"
-                implementationClass="org.openspg.idea.conceptRule.structureView.ConceptRuleStructureViewFactory"/>
-
-        <navbar implementation="org.openspg.idea.conceptRule.structureView.ConceptRuleStructureAwareNavbar"/>
-        <!-- ConceptRuleML: end -->
-
-
-        <annotator
-                language="OpenSPG Schema"
-                implementationClass="org.openspg.idea.schema.annotator.SchemaAnnotator"/>
-
         <codeInsight.lineMarkerProvider
                 language="OpenSPG Schema"
                 implementationClass="org.openspg.idea.schema.SchemaLineMarkerProvider"/>
 
-        <completion.contributor
-                language="OpenSPG Schema"
-                implementationClass="org.openspg.idea.schema.completion.SchemaCompletionContributor"/>
-
-        <!--        <psi.referenceContributor-->
-        <!--                language="OpenSPG Schema"-->
-        <!--                implementation="org.openspg.idea.schema.reference.SchemaReferenceContributor"/>-->
-        <!--        -->
-        <!--        <lang.findUsagesProvider-->
-        <!--                language="OpenSPG Schema"-->
-        <!--                implementationClass="org.openspg.idea.schema.SchemaFindUsagesProvider"/>-->
-
-        <!--        <lang.foldingBuilder-->
-        <!--                language="JAVA"-->
-        <!--                implementationClass="org.openspg.idea.language.SchemaFoldingBuilder"/>-->
+        <navbar implementation="org.openspg.idea.schema.structureView.SchemaStructureAwareNavbar"/>
 
         <lang.formatter
                 language="OpenSPG Schema"
@@ -141,6 +93,68 @@
         <httpRequestHandler implementation="org.openspg.idea.schema.ui.editor.server.PreviewStaticServer"/>
         <fileEditorProvider id="schema-preview-editor"
                             implementation="org.openspg.idea.schema.ui.editor.SchemaSplitEditorProvider"/>
+
+        <lang.foldingBuilder
+                language="OpenSPG Schema"
+                implementationClass="org.openspg.idea.schema.SchemaFoldingBuilder"/>
+
+        <spellchecker.support
+                language="OpenSPG Schema"
+                implementationClass="org.openspg.idea.schema.spellchecker.SchemaSpellcheckingStrategy"/>
+        <!-- SchemaML: end -->
+
+        <!-- ConceptRuleML: begin -->
+        <fileType
+                name="OpenSPG Concept Rule File"
+                implementationClass="org.openspg.idea.conceptRule.ConceptRuleFileType"
+                fieldName="INSTANCE"
+                language="OpenSPG Concept Rule"
+                extensions="rule"/>
+
+        <lang.parserDefinition
+                language="OpenSPG Concept Rule"
+                implementationClass="org.openspg.idea.conceptRule.grammar.ConceptRuleParserDefinition"/>
+
+        <lang.syntaxHighlighterFactory
+                language="OpenSPG Concept Rule"
+                implementationClass="org.openspg.idea.conceptRule.highlighter.ConceptRuleSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage
+                implementation="org.openspg.idea.conceptRule.highlighter.ConceptRuleColorSettingsPage"/>
+
+        <lang.psiStructureViewFactory
+                language="OpenSPG Concept Rule"
+                implementationClass="org.openspg.idea.conceptRule.structureView.ConceptRuleStructureViewFactory"/>
+
+        <navbar implementation="org.openspg.idea.conceptRule.structureView.ConceptRuleStructureAwareNavbar"/>
+
+        <lang.formatter
+                language="OpenSPG Concept Rule"
+                implementationClass="org.openspg.idea.conceptRule.formatter.ConceptRuleFormattingModelBuilder"/>
+
+        <codeStyleSettingsProvider
+                implementation="org.openspg.idea.conceptRule.codeStyle.ConceptRuleCodeStyleSettingsProvider"/>
+
+        <langCodeStyleSettingsProvider
+                implementation="org.openspg.idea.conceptRule.codeStyle.ConceptRuleLanguageCodeStyleSettingsProvider"/>
+
+        <lang.commenter
+                language="OpenSPG Concept Rule"
+                implementationClass="org.openspg.idea.conceptRule.ConceptRuleCommenter"/>
+        <!-- ConceptRuleML: end -->
+
+
+        <completion.contributor
+                language="OpenSPG Schema"
+                implementationClass="org.openspg.idea.schema.completion.SchemaCompletionContributor"/>
+
+<!--        <psi.referenceContributor-->
+<!--                language="OpenSPG Schema"-->
+<!--                implementation="org.openspg.idea.schema.reference.SchemaReferenceContributor"/>-->
+
+        <!--        <lang.findUsagesProvider-->
+        <!--                language="OpenSPG Schema"-->
+        <!--                implementationClass="org.openspg.idea.schema.SchemaFindUsagesProvider"/>-->
 
     </extensions>
 

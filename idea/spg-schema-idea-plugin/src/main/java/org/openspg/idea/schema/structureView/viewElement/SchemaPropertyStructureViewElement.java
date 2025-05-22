@@ -4,9 +4,9 @@ import com.intellij.ide.projectView.PresentationData;
 import com.intellij.ide.util.treeView.smartTree.TreeElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.lang.psi.SchemaProperty;
-import org.openspg.idea.lang.psi.SchemaPropertyMeta;
 import org.openspg.idea.schema.SchemaIcons;
+import org.openspg.idea.schema.lang.psi.SchemaProperty;
+import org.openspg.idea.schema.lang.psi.SchemaPropertyMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +19,14 @@ public class SchemaPropertyStructureViewElement extends AbstractSchemaStructureV
 
     @Override
     public String getNullableAlphaSortKey() {
-        return myElement.getPropertyInfo().getPropertyName();
+        return myElement.getPropertyHead().getBasicStructureDeclaration().getStructureNameDeclaration().getText();
     }
 
     @Override
     protected PresentationData createPresentation(SchemaProperty element) {
         return new PresentationData(
-                myElement.getPropertyInfo().getPropertyName(),
-                myElement.getPropertyInfo().getPropertyAliasName(),
+                element.getPropertyHead().getBasicStructureDeclaration().getStructureNameDeclaration().getText(),
+                element.getPropertyHead().getBasicStructureDeclaration().getStructureAliasDeclaration().getText(),
                 SchemaIcons.Nodes.Property,
                 null
         );

@@ -17,8 +17,8 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.lang.psi.SchemaEntity;
 import org.openspg.idea.schema.SchemaFileType;
+import org.openspg.idea.schema.lang.psi.SchemaEntity;
 
 import java.util.Objects;
 
@@ -64,7 +64,7 @@ public class SchemaSplitEditorProvider implements FileEditorProvider, DumbAware 
                     return;
                 }
 
-                String entityName = entity.getEntityInfo().getEntityName();
+                String entityName = entity.getEntityHead().getBasicStructureDeclaration().getStructureNameDeclaration().getText();
                 if (entityName != null && !entityName.isBlank()) {
                     previewEditor.activateEntity(entityName);
                 }

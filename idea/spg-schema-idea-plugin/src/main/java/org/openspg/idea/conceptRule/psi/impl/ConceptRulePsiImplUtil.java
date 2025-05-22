@@ -1,10 +1,7 @@
 package org.openspg.idea.conceptRule.psi.impl;
 
 import org.apache.commons.lang3.StringUtils;
-import org.openspg.idea.lang.psi.ConceptRuleNamespace;
-import org.openspg.idea.lang.psi.ConceptRuleNodePattern;
-import org.openspg.idea.lang.psi.ConceptRulePredicatedDefine;
-import org.openspg.idea.lang.psi.ConceptRuleRuleWrapper;
+import org.openspg.idea.lang.psi.*;
 
 import java.util.List;
 
@@ -15,13 +12,6 @@ public class ConceptRulePsiImplUtil {
     //
     public static String getValue(ConceptRuleNamespace element) {
         return element.getNamespaceValue().getText();
-    }
-
-    // ============================================
-    // ConceptRuleRuleWrapper methods
-    //
-    public static String getLabel(ConceptRuleRuleWrapper element) {
-        return element.getRuleWrapperHead().getRuleWrapperTitle().getText();
     }
 
     // ============================================
@@ -41,6 +31,28 @@ public class ConceptRulePsiImplUtil {
             return StringUtils.EMPTY;
         }
         return element.getFullEdgePointingRight().getText().trim() + nodePatterns.get(1).getText();
+    }
+
+    // ============================================
+    // ConceptRuleIdentifier methods
+    //
+    public static String getLabel(ConceptRuleIdentifier element) {
+        String label = element.getText();
+        label = StringUtils.unwrap(label, "`");
+        label = StringUtils.unwrap(label, "'");
+        label = StringUtils.unwrap(label, "\"");
+        return label;
+    }
+
+    // ============================================
+    // ConceptRuleIdentifier methods
+    //
+    public static String getLabel(ConceptRuleConceptInstanceId element) {
+        String label = element.getText();
+        label = StringUtils.unwrap(label, "`");
+        label = StringUtils.unwrap(label, "'");
+        label = StringUtils.unwrap(label, "\"");
+        return label;
     }
 
 }

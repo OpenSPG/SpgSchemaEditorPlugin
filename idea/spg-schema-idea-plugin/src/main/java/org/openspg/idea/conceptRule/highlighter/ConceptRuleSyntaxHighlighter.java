@@ -51,8 +51,10 @@ public class ConceptRuleSyntaxHighlighter extends SyntaxHighlighterBase {
         ourMap.put(ConceptRuleTypes.NAMESPACE_KEYWORD, ConceptRuleHighlightingColors.NAMESPACE_KEY);
         ourMap.put(ConceptRuleTypes.NAMESPACE_VALUE, ConceptRuleHighlightingColors.NAMESPACE_VALUE);
 
-        ourMap.put(ConceptRuleTypes.RULE_WRAPPER_TEXT, ConceptRuleHighlightingColors.WRAPPER_PATTERN);
         ourMap.put(ConceptRuleTypes.WRAPPER_RULE_KEYWORD, ConceptRuleHighlightingColors.WRAPPER_FIELD);
+
+        ourMap.put(ConceptRuleTypes.LINE_COMMENT, ConceptRuleHighlightingColors.LINE_COMMENT);
+        ourMap.put(ConceptRuleTypes.BLOCK_COMMENT, ConceptRuleHighlightingColors.BLOCK_COMMENT);
 
         ourMap.put(TokenType.BAD_CHARACTER, HighlighterColors.BAD_CHARACTER);
     }

@@ -4,10 +4,10 @@ import com.intellij.ide.projectView.PresentationData;
 import com.intellij.ide.util.treeView.smartTree.TreeElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.lang.psi.SchemaEntity;
-import org.openspg.idea.lang.psi.SchemaEntityInfo;
-import org.openspg.idea.lang.psi.SchemaEntityMeta;
 import org.openspg.idea.schema.SchemaIcons;
+import org.openspg.idea.schema.lang.psi.SchemaEntity;
+import org.openspg.idea.schema.lang.psi.SchemaEntityHead;
+import org.openspg.idea.schema.lang.psi.SchemaEntityMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,15 +20,15 @@ public class SchemaEntityStructureViewElement extends AbstractSchemaStructureVie
 
     @Override
     public String getNullableAlphaSortKey() {
-        return myElement.getName();
+        return myElement.getEntityHead().getBasicStructureDeclaration().getStructureNameDeclaration().getText();
     }
 
     @Override
     protected PresentationData createPresentation(SchemaEntity element) {
-        SchemaEntityInfo info = element.getEntityInfo();
+        SchemaEntityHead head = element.getEntityHead();
         return new PresentationData(
-                info.getEntityName(),
-                info.getEntityAliasName(),
+                head.getBasicStructureDeclaration().getStructureNameDeclaration().getText(),
+                head.getBasicStructureDeclaration().getStructureAliasDeclaration().getText(),
                 SchemaIcons.Nodes.Entity,
                 null
         );

@@ -22,7 +22,7 @@ public class SchemaHighlightingColors {
     public static final TextAttributesKey ENTITY_NAME =
             TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ENTITY_NAME", DefaultLanguageHighlighterColors.CLASS_NAME);
     public static final TextAttributesKey ENTITY_ALIAS =
-            TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ENTITY_ALIAS_NAME", DefaultLanguageHighlighterColors.STRING);
+            TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ENTITY_ALIAS", DefaultLanguageHighlighterColors.STRING);
     public static final TextAttributesKey ENTITY_REFERENCE =
             TextAttributesKey.createTextAttributesKey("OpenSGP_SCHEMA_ENTITY_REFERENCE", DefaultLanguageHighlighterColors.CLASS_REFERENCE);
 

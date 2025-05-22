@@ -15,7 +15,7 @@ import org.cef.handler.*;
 import org.cef.misc.BoolRef;
 import org.cef.network.CefRequest;
 import org.jetbrains.ide.BuiltInServerManager;
-import org.openspg.idea.lang.psi.SchemaEntity;
+import org.openspg.idea.schema.lang.psi.SchemaEntity;
 import org.openspg.idea.schema.ui.editor.jcef.FetchSchemaApiSupplier;
 import org.openspg.idea.schema.ui.editor.jcef.FetchThemeCssSupplier;
 import org.openspg.idea.schema.ui.editor.jcef.FocusEntityApiSupplier;
@@ -126,7 +126,7 @@ public class SchemaHtmlPanel extends JCEFHtmlPanel {
 
     private Boolean handleEntityActivated(List<SchemaEntity> entities) {
         for (SchemaEntity entity : entities) {
-            System.out.println(entity.getName());
+            System.out.println(entity.getEntityHead().getBasicStructureDeclaration().getStructureNameDeclaration().getText());
         }
         return true;
     }

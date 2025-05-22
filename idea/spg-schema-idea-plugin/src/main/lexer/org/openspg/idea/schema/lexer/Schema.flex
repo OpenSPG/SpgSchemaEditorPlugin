@@ -1,13 +1,13 @@
 package org.openspg.idea.lang.lexer;
 
 import com.intellij.psi.TokenType;
-import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.tree.IElementType;import com.intellij.ui.mac.foundation.ID;
 
 /* Auto generated File */
 %%
 
 %class SchemaLexer
-%implements com.intellij.lexer.FlexLexer, org.openspg.idea.grammar.psi.SchemaTypes
+%implements com.intellij.lexer.FlexLexer, org.openspg.idea.schema.grammar.psi.SchemaTypes
 %unicode
 %public
 %column
@@ -27,7 +27,7 @@ import com.intellij.psi.tree.IElementType;
     private int myBraceCount = 0;
 
     private final int[] indentPos = {0, 0, 0, 0, 0, 0};
-    private final int[] indentState = {ENTITY_STATE, ENTITYMETA_STATE, PROPERTY_STATE, PROPERTYMETA_STATE, PROPERTY_STATE, PROPERTYMETA_STATE};
+    private final int[] indentState = {DEFINITION_STATE, KV_STATE, DEFINITION_STATE, KV_STATE, DEFINITION_STATE, KV_STATE};
     private final IElementType[] indentToken = {INDENT, INDENT_META, INDENT_PROP, INDENT_PROPMETA, INDENT_SUBPROP, INDENT_SUBPROPMETA};
     private final int maxIndentLevel = 6;
     private int currentIndentLevel = 0;
@@ -75,23 +75,6 @@ import com.intellij.psi.tree.IElementType;
         return this.currentIndentLevel;
     }
 
-    //-------------------------------------------------------------------------------------------------------------------
-    private void openBrace() {
-        myBraceCount++;
-        if (myBraceCount != 0) {
-            yybegin(PLAIN_BLOCK_STATE);
-        }
-    }
-
-    private void closeBrace() {
-        if (myBraceCount > 0) {
-            myBraceCount--;
-        }
-        if (myBraceCount == 0){
-            yybegin(this.indentState[this.currentIndentLevel]);
-        }
-    }
-
     private void goToState(int state) {
         yybegin(state);
         yypushback(yylength());
@@ -112,34 +95,32 @@ import com.intellij.psi.tree.IElementType;
 // From the spec
 ANY_CHAR = [^]
 
-NS_CHAR = [^\n\t\r\ ]
-NS_INDICATOR = [-?:,\(\)\[\]\{\}#&*!|>'\"%@`]
-
-EOL =                           "\n"
-WHITE_SPACE_CHAR =              [ \t]
-WHITE_SPACE =                   {WHITE_SPACE_CHAR}+
-
-NAME =                          [\w]+
-
-LINE =                          [^\n]*
-
 // Schema spec: when a comment follows another syntax element,
 //  it must be separated from it by space characters.
 // See http://www.yaml.org/spec/1.2/spec.html#comment
 COMMENT =                       "#"{LINE}
 
-ESCAPE_SEQUENCE=                \\[^\n]
-DSTRING =                       \"([^\\\"]|{ESCAPE_SEQUENCE}|\\\n)*\"
-STRING =                        '([^']|'')*'
+IDENTIFIER = [:jletter:] [:jletterdigit:]*
+LETTERDIGIT = [:jletterdigit:]+
 
-TEXT =                          {DSTRING}|{STRING}|{NAME}
+DOUBLE_QUOTED_STRING = \"([^\\\"\r\n]|\\[^\r\n])*\"?
+SINGLE_QUOTED_STRING = '([^\\'\r\n]|\\[^\r\n])*'?
+GRAVE_QUOTED_STRING = \`([^\\`\r\n]|\\[^\r\n])*\`?
+
+WHITE_SPACE_CHAR = [ \t]
+WHITE_SPACE = {WHITE_SPACE_CHAR}+
+EOL = "\n"
+
+BLANK_LINE = {WHITE_SPACE_CHAR}*{EOL}
+LINE = [^\n]*
+COMMENT = "#"{LINE}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// STATES DECLARATIONS //////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Main states
-%xstate LINE_START_STATE, BLOCK_STATE, PLAIN_BLOCK_STATE
+%xstate LINE_START_STATE, PLAIN_BLOCK_STATE
 
 // Small technical one-token states
 %xstate NAMESPACE_STATE, LINE_COMMENT_STATE, ERROR_STATE
@@ -152,6 +133,7 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 
 %xstate WAITING_META_VALUE_STATE, WAITING_META_BUILTIN_VALUE_STATE, WAITING_META_TEXT_VALUE_STATE
 
+%xstate DEFINITION_STATE, KV_STATE, WAITING_VALUE_STATE, WAITING_BLOCK_VALUE_STATE
 %%
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////// RULES declarations ////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,12 +148,16 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
           goToState(NAMESPACE_STATE);
       }
 
+    {BLANK_LINE} {
+          return TokenType.WHITE_SPACE;
+      }
+
     {WHITE_SPACE}* {COMMENT} {
-          goToState(LINE_COMMENT_STATE);
+          return LINE_COMMENT;
       }
 
     {EOL} {
-          return EOL;
+          return TokenType.WHITE_SPACE;
       }
 
     {WHITE_SPACE} {
@@ -187,7 +173,7 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 
     {ANY_CHAR} {
           this.currentIndentLevel = 0;
-          goToState(ENTITY_STATE);
+          goToState(DEFINITION_STATE);
       }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -195,10 +181,10 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 
 //-------------------------------------------------------------------------------------------------------------------
 // common: white-space, eol, comment
-<NAMESPACE_STATE, ENTITY_STATE, ENTITYMETA_STATE, PROPERTY_STATE, PROPERTYMETA_STATE, ERROR_STATE> {
+<NAMESPACE_STATE, ERROR_STATE, DEFINITION_STATE, KV_STATE, WAITING_VALUE_STATE> {
     {EOL} {
           yybegin(LINE_START_STATE);
-          return EOL;
+          return TokenType.WHITE_SPACE;
       }
 
     {COMMENT} {
@@ -213,15 +199,15 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 <LINE_COMMENT_STATE> {
     {EOL} {
           yybegin(LINE_START_STATE);
-          return EOL;
-      }
-
-    {COMMENT} {
-          return LINE_COMMENT;
+          return TokenType.WHITE_SPACE;
       }
 
     {WHITE_SPACE} {
           return TokenType.WHITE_SPACE;
+      }
+
+    {COMMENT} {
+          return LINE_COMMENT;
       }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -230,12 +216,12 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 //-------------------------------------------------------------------------------------------------------------------
 // namespace
 <NAMESPACE_STATE> {
-    ("namespace") {
-        return NAMESPACE_MARKER;
+    "namespace" {
+        return NAMESPACE_KEYWORD;
     }
 
-    {TEXT} {
-          return TEXT;
+    {IDENTIFIER} {
+          return IDENTIFIER;
       }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -250,245 +236,117 @@ TEXT =                          {DSTRING}|{STRING}|{NAME}
 }
 //-------------------------------------------------------------------------------------------------------------------
 
-
-// common waiting state
-<WAITING_ENTITY_ALIAS_NAME_STATE, WAITING_ENTITY_CLASS_STATE, WAITING_PROPERTY_ALIAS_NAME_STATE, WAITING_PROPERTY_CLASS_STATE, WAITING_META_VALUE_STATE> {
-    {WHITE_SPACE}*{EOL} {
-          yybegin(LINE_START_STATE);
-          return EOL;
-      }
-
-    {COMMENT} {
-          return COMMENT;
-      }
-
-    {WHITE_SPACE} {
-          return TokenType.WHITE_SPACE;
-      }
-}
 //-------------------------------------------------------------------------------------------------------------------
+// definition-state
+// name (alias-name) : type
+<DEFINITION_STATE> {
+    {DOUBLE_QUOTED_STRING}   { return STRING_LITERAL;  }
+    {SINGLE_QUOTED_STRING}   { return STRING_LITERAL;  }
+    {GRAVE_QUOTED_STRING}   { return STRING_LITERAL;  }
 
+    [Ee][Nn][Tt][Ii][Tt][Yy][Tt][Yy][Pp][Ee]      { return ENTITY_TYPE_KEYWORD; }
+    [Cc][Oo][Nn][Cc][Ee][Pp][Tt][Tt][Yy][Pp][Ee]  { return CONCEPT_TYPE_KEYWORD; }
+    [Ee][Vv][Ee][Nn][Tt][Tt][Yy][Pp][Ee]          { return EVENT_TYPE_KEYWORD; }
+    [Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd][Tt][Yy][Pp][Ee] { return STANDARD_TYPE_KEYWORD; }
+    [Bb][Aa][Ss][Ii][Cc][Tt][Yy][Pp][Ee]          { return BASIC_TYPE_KEYWORD; }
+    [Ii][Nn][Tt][Ee][Gg][Ee][Rr]                  { return INTEGER_KEYWORD; }
+    [Ff][Ll][Oo][Aa][Tt]  { return FLOAT_KEYWORD; }
+    [Tt][Ee][Xx][Tt]      { return TEXT_KEYWORD; }
 
-//-------------------------------------------------------------------------------------------------------------------
-// level-1 entity
-<ENTITY_STATE> {
-    [a-zA-Z0-9\.]+ {
-          return ENTITY_NAME;
-      }
+    {IDENTIFIER} { return IDENTIFIER; }
+    {LETTERDIGIT} { return TEXT; }
 
-    "(" {TEXT} ")" {
-          goToState(WAITING_ENTITY_ALIAS_NAME_STATE);
-      }
+    "->"    { return RIGHT_ARROW; }
+    "("     { return LPARENTH; }
+    ")"     { return RPARENTH; }
+    ","     { return COMMA; }
+    ":"     { return COLON; }
+    "."     { return DOT; }
 
-    [^\n] {
+    {ANY_CHAR} {
           return TokenType.BAD_CHARACTER;
       }
 }
+//-------------------------------------------------------------------------------------------------------------------
 
-<WAITING_ENTITY_ALIAS_NAME_STATE> {
-    "(" {
-          return OPEN_BRACKET;
-      }
 
-    ")" {
-          yybegin(WAITING_ENTITY_CLASS_STATE);
-          return CLOSE_BRACKET;
-      }
+//-------------------------------------------------------------------------------------------------------------------
+// key-value-state
+<KV_STATE> {
+    [Dd][Ee][Ss][Cc] { return DESC_KEYWORD; }
+    [Pp][Rr][Oo][Pp][Ee][Rr][Tt][Ii][Ee][Ss] { return PROPERTIES_KEYWORD; }
+    [Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn][Ss]     { return RELATIONS_KEYWORD; }
+    [Hh][Yy][Pp][Ee][Rr][Nn][Yy][Mm][Pp][Rr][Ee][Dd][Ii][Cc][Aa][Tt][Ee] { return HYPERNYMP_PREDICATE_KEYWORD; }
+    [Rr][Ee][Gg][Uu][Ll][Aa][Rr] { return REGULAR_KEYWORD; }
+    [Ss][Pp][Rr][Ee][Aa][Dd][Aa][Bb][Ll][Ee] { return SPREADABLE_KEYWORD; }
+    [Aa][Uu][Tt][Oo][Rr][Ee][Ll][Aa][Tt][Ee] { return AUTORELATE_KEYWORD; }
+    [Cc][Oo][Nn][Ss][Tt][Rr][Aa][Ii][Nn][Tt] { return CONSTRAINT_KEYWORD; }
+    [Rr][Uu][Ll][Ee] { return RULE_KEYWORD; }
+    [Ii][Nn][Dd][Ee][Xx] { return INDEX_KEYWORD; }
 
-    {TEXT} {
-          return ENTITY_ALIAS_NAME;
-      }
-}
-
-<WAITING_ENTITY_CLASS_STATE> {
-    "EntityType" | "ConceptType" | "EventType" | "StandardType" | "BasicType" {
-          return ENTITY_BUILTIN_CLASS;
-      }
-
-    "," {
-          return COMMA;
-      }
+    {IDENTIFIER} { return IDENTIFIER; }
 
     ":" {
+          yybegin(WAITING_VALUE_STATE);
           return COLON;
       }
 
-    "->" {
-          return INHERITED;
-      }
-
-    [a-zA-Z0-9]+ {
-          return ENTITY_CLASS;
-      }
-
-    [^\n] {
+    {ANY_CHAR} {
           return TokenType.BAD_CHARACTER;
       }
 }
 //-------------------------------------------------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------------------------------------------------
-// level-2 entity meta
-<ENTITYMETA_STATE> {
-    "desc" | "properties" | "relations" | "hypernymPredicate" | "regular" | "spreadable" | "autoRelate" {
-          return META_TYPE;
+// waiting value
+<WAITING_VALUE_STATE> {
+    "[[": {
+          yybegin(WAITING_BLOCK_VALUE_STATE);
+          return DOUBLE_LBRACKET;
       }
 
-    ":" {
-          yybegin(WAITING_META_VALUE_STATE);
-          return COLON;
+    ([Ii][Ss][Aa]) {
+          return IS_A_KEYWORD;
+      }
+    ([Ll][Oo][Cc][Aa][Tt][Ee][Aa][Tt]) {
+          return LOCATE_AT_KEYWORD;
+      }
+    ([Mm][Aa][Nn][Nn][Ee][Rr][Oo][ff]) {
+          return MANNER_OF_KEYWORD;
+      }
+    ([Tt][Ee][Xx][Tt]) {
+          return TEXT_KEYWORD;
+      }
+    ([Vv][Ee][Cc][Tt][Oo][Rr]) {
+          return VECTOR_KEYWORD;
+      }
+    ([Tt][Ee][Xx][Tt][Aa][Nn][Dd][Vv][Ee][Cc][Tt][Oo][Rr]) {
+          return TEXT_AND_VECTOR_KEYWORD;
+      }
+    ([Nn][Oo][Tt][Nn][Uu][Ll][Ll]) {
+          return NOT_NULL_KEYWORD;
+      }
+    ([Mm][Uu][Ll][Tt][Ii][Vv][Aa][Ll][Uu][Ee]) {
+          return MULTI_VALUE_KEYWORD;
       }
 
-    [^\n] {
-          return TokenType.BAD_CHARACTER;
-      }
-}
-//-------------------------------------------------------------------------------------------------------------------
-
-
-//-------------------------------------------------------------------------------------------------------------------
-// level-3/5 property/subproperty
-<PROPERTY_STATE> {
-    [a-zA-Z0-9#]+ {
-          return PROPERTY_NAME;
-      }
-
-    "(" {TEXT} ")" {
-          goToState(WAITING_PROPERTY_ALIAS_NAME_STATE);
-      }
-
-    [^\n] {
-          return TokenType.BAD_CHARACTER;
-      }
-}
-
-<WAITING_PROPERTY_ALIAS_NAME_STATE> {
-    "(" {
-          return OPEN_BRACKET;
-      }
-
-    ")" {
-          yybegin(WAITING_PROPERTY_CLASS_STATE);
-          return CLOSE_BRACKET;
-      }
-
-    {TEXT} {
-          return PROPERTY_ALIAS_NAME;
-      }
-}
-
-<WAITING_PROPERTY_CLASS_STATE> {
-    "EntityType" | "ConceptType" | "EventType" | "StandardType" | "Integer" | "Text" | "Float" {
-          return BUILTIN_TYPE;
-      }
-
-    "," {
-          return COMMA;
-      }
-
-    ":" {
-          return COLON;
-      }
-
-    [a-zA-Z0-9\.]+ {
-          return PROPERTY_CLASS;
-      }
-
-    [^\n] {
-          return TokenType.BAD_CHARACTER;
-      }
-}
-//-------------------------------------------------------------------------------------------------------------------
-
-
-//-------------------------------------------------------------------------------------------------------------------
-// level-4/6 property meta/subproperty meta
-<PROPERTYMETA_STATE> {
-    "desc" | "properties" | "constraint" | "rule" | "index" {
-          return META_TYPE;
-      }
-
-    ":" {
-          yybegin(WAITING_META_VALUE_STATE);
-          return COLON;
-      }
-
-    [^\n] {
-          return TokenType.BAD_CHARACTER;
-      }
-}
-//-------------------------------------------------------------------------------------------------------------------
-
-
-//-------------------------------------------------------------------------------------------------------------------
-// common meta value
-<WAITING_META_VALUE_STATE, WAITING_META_BUILTIN_VALUE_STATE, WAITING_META_TEXT_VALUE_STATE> {
-    {EOL} {
-          yybegin(LINE_START_STATE);
-          return EOL;
-      }
-
-    {WHITE_SPACE} {
-          return TokenType.WHITE_SPACE;
-      }
-
-    {COMMENT} {
-          return COMMENT;
-      }
-}
-<WAITING_META_VALUE_STATE> {
-    "[[" {
-          yybegin(PLAIN_BLOCK_STATE);
-          return OPEN_PLAIN_BLOCK;
-      }
-
-    ("isA"|"locateAt"|"mannerOf"|"Text"|"Vector"|"TextAndVector"|"NotNull"|"MultiValue") {WHITE_SPACE}* {EOL} {
-          goToState(WAITING_META_BUILTIN_VALUE_STATE);
-      }
-
-    [^#\n] {
-          goToState(WAITING_META_TEXT_VALUE_STATE);
-      }
-}
-
-<WAITING_META_BUILTIN_VALUE_STATE> {
-    {TEXT} {
-          return BUILTIN_TYPE;
-      }
-}
-
-<WAITING_META_TEXT_VALUE_STATE> {
-    [^#\n]+ {
-          //return TokenType.BAD_CHARACTER;
+    [^ \n]+ {
           return TEXT;
       }
 }
-
 //-------------------------------------------------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------------------------------------------------
-// plain block. [[plain text]]
-<PLAIN_BLOCK_STATE> {
-    {WHITE_SPACE}*{EOL} {
-          return EOL;
-      }
-
-    {WHITE_SPACE} {
-          return TokenType.WHITE_SPACE;
-      }
-
+// key-value-state
+<WAITING_BLOCK_VALUE_STATE> {
     "]]" {
-          closeBrace();
-          return CLOSE_PLAIN_BLOCK;
+          yybegin(KV_STATE);
+          return DOUBLE_RBRACKET;
       }
 
-    "]" {
-          return TEXT;
-      }
-
-    [^\n\]]+ {
-          return TEXT;
+    ^(.*\]\]) {
+          yybegin(WAITING_VALUE_STATE);
+          return PLAIN_TEXT;
       }
 }
+//-------------------------------------------------------------------------------------------------------------------

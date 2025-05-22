@@ -7,7 +7,11 @@ public class ConceptRuleDemo {
             namespace SupplyChain
             
             `TaxOfProdEvent`/`价格上涨`:
+                // 定义规则
                 rule: [[
+                    /**
+                     * 定义
+                     **/
                     Define (e:ProductChainEvent)-[p:belongTo]->(o:`TaxOfProdEvent`/`价格上涨`) {
                         Structure {
                         }

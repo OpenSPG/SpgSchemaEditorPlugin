@@ -7,22 +7,32 @@ import com.intellij.openapi.options.colors.ColorDescriptor;
 import com.intellij.openapi.options.colors.ColorSettingsPage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.openspg.idea.schema.SchemaBundle;
 import org.openspg.idea.schema.SchemaIcons;
 import org.openspg.idea.schema.demo.SchemaDemo;
 
 import javax.swing.*;
 import java.util.Map;
 
+import static org.openspg.idea.schema.highlighter.SchemaHighlightingColors.*;
+
 final class SchemaColorSettingsPage implements ColorSettingsPage {
 
     private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[]{
-            new AttributesDescriptor("Base//Keywords", SchemaHighlightingColors.KEYWORD),
-            new AttributesDescriptor("Base//Operation", SchemaHighlightingColors.OPERATION_SIGN),
-            new AttributesDescriptor("Schema//Name", SchemaHighlightingColors.ENTITY_NAME),
-            new AttributesDescriptor("Schema//Alias name", SchemaHighlightingColors.ENTITY_ALIAS),
-            new AttributesDescriptor("Schema//Type", SchemaHighlightingColors.ENTITY_REFERENCE),
-            new AttributesDescriptor("Others//Comment", SchemaHighlightingColors.COMMENT),
-            new AttributesDescriptor("Others//Error", SchemaHighlightingColors.ERROR),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.keywords"), KEYWORD),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.operator.sign"), OPERATION_SIGN),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.schema.name"), ENTITY_NAME),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.schema.alias.name"), ENTITY_ALIAS),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.schema.type"), ENTITY_REFERENCE),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.comment"), COMMENT),
+            new AttributesDescriptor(
+                    SchemaBundle.message("SchemaColorSettings.error"), ERROR),
     };
 
     @Override

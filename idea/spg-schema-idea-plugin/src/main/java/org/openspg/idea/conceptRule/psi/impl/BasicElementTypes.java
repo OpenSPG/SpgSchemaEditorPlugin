@@ -30,6 +30,5 @@ public interface BasicElementTypes extends ConceptRuleTypes {
     TokenSet BASIC_INTEGER_LITERALS = TokenSet.create(INTEGER_LITERAL);
     TokenSet BASIC_REAL_LITERALS = TokenSet.create(FLOAT_LITERAL);
     TokenSet BASIC_STRING_LITERALS = TokenSet.create(STRING_LITERAL);
-    TokenSet BASIC_TEXT_LITERALS = TokenSet.create(STRING_LITERAL);
 
 }

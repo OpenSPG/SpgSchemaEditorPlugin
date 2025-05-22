@@ -9,7 +9,7 @@ import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.openspg.idea.conceptRule.structureView.viewElement.ConceptRuleFileStructureViewElement;
-import org.openspg.idea.lang.psi.SchemaEntityInfo;
+import org.openspg.idea.lang.psi.ConceptRuleRuleWrapper;
 
 public class ConceptRuleStructureViewModel extends StructureViewModelBase implements
         StructureViewModel.ElementInfoProvider {
@@ -37,7 +37,7 @@ public class ConceptRuleStructureViewModel extends StructureViewModelBase implem
     @Override
     protected Class<?> @NotNull [] getSuitableClasses() {
         return new Class[]{
-                SchemaEntityInfo.class,
+                ConceptRuleRuleWrapper.class,
         };
     }
 

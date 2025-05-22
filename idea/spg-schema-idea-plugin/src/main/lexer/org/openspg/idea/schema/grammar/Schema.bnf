@@ -1,15 +1,15 @@
 {
-    parserClass="org.openspg.idea.lang.parser.SchemaParser"
+    parserClass="org.openspg.idea.schema.lang.parser.SchemaParser"
     parserUtilClass="org.openspg.idea.schema.grammar.SchemaParserUtil"
 
     extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
 
     psiClassPrefix="Schema"
     psiImplClassSuffix="Impl"
-    psiPackage="org.openspg.idea.lang.psi"
-    psiImplPackage="org.openspg.idea.lang.psi.impl"
+    psiPackage="org.openspg.idea.schema.lang.psi"
+    psiImplPackage="org.openspg.idea.schema.lang.psi.impl"
 
-    elementTypeHolderClass="org.openspg.idea.grammar.psi.SchemaTypes"
+    elementTypeHolderClass="org.openspg.idea.schema.grammar.psi.SchemaTypes"
     elementTypeClass="org.openspg.idea.schema.SchemaElementType"
     tokenTypeClass="org.openspg.idea.schema.psi.SchemaTokenType"
 
@@ -18,70 +18,157 @@
 
 schemaFile ::= item_*
 
-private item_ ::= namespace|entity|COMMENT|LINE_COMMENT|indent_|EOL|TEXT
+private item_ ::= namespace|entity|COMMENT|LINE_COMMENT|indents_
 
-private indent_ ::= INDENT|INDENT_META|INDENT_PROP|INDENT_PROPMETA|INDENT_SUBPROP|INDENT_SUBPROPMETA
+private indents_ ::= INDENT|INDENT_META|INDENT_PROP|INDENT_PROPMETA|INDENT_SUBPROP|INDENT_SUBPROPMETA
 
-plain_text ::= (OPEN_PLAIN_BLOCK (TEXT|EOL)* CLOSE_PLAIN_BLOCK)
-private text_value ::= TEXT|plain_text
-private EOL_ ::= (indent_)* EOL
-
-namespace ::= NAMESPACE_MARKER TEXT EOL_ {
-    methods=[getValue toJson]
+namespace ::= NAMESPACE_KEYWORD IDENTIFIER {
+    methods=[getNamespace toJson]
 }
 
-entity ::= entity_info EOL_* entity_meta* {
+/**
+ * Basic Element declaration
+ * Example:
+ */
+// Example:
+// Chunk(文本块): EntityType
+// BigChunk("大文本块"): StandardType.Text
+// MultiChunk("多个文本块") -> Chunk, BigChunk
+basic_structure_declaration ::= structure_name_declaration LPARENTH structure_alias_declaration RPARENTH structure_type_declaration {
     methods=[getName toJson]
 }
 
-entity_info ::= referencable_entity_name OPEN_BRACKET ENTITY_ALIAS_NAME CLOSE_BRACKET (basedEntityClass_|inheritedEntityClass_) {
-    mixin="org.openspg.idea.schema.psi.impl.SchemaNamedElementImpl"
-    implements="org.openspg.idea.schema.psi.SchemaNamedElement"
-    methods=[getEntityName getEntityAliasName getEntityClassList getName setName getNameIdentifier]
-}
-private basedEntityClass_ ::= COLON ENTITY_BUILTIN_CLASS
-private inheritedEntityClass_ ::= INHERITED (referencable_entity_class COMMA)* (referencable_entity_class) COLON
+structure_name_declaration ::= structure_name
+structure_name ::= IDENTIFIER
 
-referencable_entity_name ::= ENTITY_NAME {
-    methods=[getReference]
-}
+structure_alias_declaration ::= structure_alias
+structure_alias ::= (IDENTIFIER | STRING_LITERAL | TEXT)+
 
-referencable_entity_class ::= ENTITY_BUILTIN_CLASS|ENTITY_CLASS {
-    methods=[getReference]
+// : EntityType
+// -> EntityType, ConceptType, MyType:
+structure_type_declaration ::= basic_structure_type_declaration | inherited_structure_type_declaration {
+    methods=[getTypes]
 }
 
-entity_meta ::= entity_meta_info EOL_* property* {
-    methods=[toJson]
+basic_structure_type_declaration ::= COLON basic_structure_type_variable
+basic_structure_type_variable ::= knowledge_structure_type | basic_structure_type | standard_structure_type | variable_structure_type
+
+inherited_structure_type_declaration ::= RIGHT_ARROW (inherited_structure_type_variable COMMA)* inherited_structure_type_variable COLON
+inherited_structure_type_variable ::= knowledge_structure_type | standard_structure_type | variable_structure_type
+
+knowledge_structure_type ::= ENTITY_TYPE_KEYWORD | CONCEPT_TYPE_KEYWORD | EVENT_TYPE_KEYWORD
+basic_structure_type ::= (BASIC_TYPE_KEYWORD DOT)? (INTEGER_KEYWORD | FLOAT_KEYWORD | TEXT_KEYWORD)
+standard_structure_type ::= STANDARD_TYPE_KEYWORD DOT IDENTIFIER
+variable_structure_type ::= structure_name {
+   methods=[getReference]
 }
 
-entity_meta_info ::= INDENT_META META_TYPE COLON (BUILTIN_TYPE|text_value*)? {
-    methods=[getName getValue]
-}
-
-property ::= property_info EOL_* (property_meta EOL_*)* {
-    methods=[toJson]
-}
-property_info ::= (INDENT_PROP PROPERTY_NAME OPEN_BRACKET PROPERTY_ALIAS_NAME CLOSE_BRACKET COLON multiPropertyClass_) {
-    methods=[getPropertyName getPropertyAliasName getPropertyClassList]
-}
-referencable_property_class ::= (BUILTIN_TYPE | PROPERTY_CLASS) {
-    methods=[getReference]
-}
-private multiPropertyClass_ ::= (referencable_property_class COMMA)* referencable_property_class
-
-property_meta ::= property_meta_info EOL_* (sub_property)* {
-    methods=[toJson]
-}
-property_meta_info ::= INDENT_PROPMETA META_TYPE COLON (BUILTIN_TYPE | text_value)* {
-    methods=[getName getValue]
-}
-
-sub_property ::= sub_property_info EOL_* (sub_property_meta EOL_*)* {
-    methods=[toJson]
-}
-sub_property_info ::= (INDENT_SUBPROP PROPERTY_NAME OPEN_BRACKET PROPERTY_ALIAS_NAME CLOSE_BRACKET COLON multiPropertyClass_) {
-    methods=[getPropertyName getPropertyAliasName getPropertyClassList]
-}
-sub_property_meta ::= (INDENT_SUBPROPMETA META_TYPE COLON (text_value | BUILTIN_TYPE)*) {
+/**
+ * Basic Key-Value Property declaration
+ * Example:
+ * desc:
+ * desc: 文本块
+ * desc: [[ plain text... ]]
+ */
+basic_property_declaration ::= property_name_declaration COLON property_value_declaration? {
     methods=[getName getValue toJson]
 }
+
+property_name_declaration ::= property_name_variable
+property_name_variable ::= builtin_property_name | IDENTIFIER
+builtin_property_name ::= DESC_KEYWORD | PROPERTIES_KEYWORD | RELATIONS_KEYWORD | HYPERNYMP_PREDICATE_KEYWORD | REGULAR_KEYWORD | SPREADABLE_KEYWORD | AUTORELATE_KEYWORD | CONSTRAINT_KEYWORD | RULE_KEYWORD | INDEX_KEYWORD
+
+property_value_declaration ::= property_value_variable
+property_value_variable ::= builtin_property_value | plain_text_block | TEXT+
+builtin_property_value ::= IS_A_KEYWORD | LOCATE_AT_KEYWORD | MANNER_OF_KEYWORD | TEXT_KEYWORD | VECTOR_KEYWORD | TEXT_AND_VECTOR_KEYWORD | NOT_NULL_KEYWORD | MULTI_VALUE_KEYWORD
+plain_text_block ::= DOUBLE_LBRACKET PLAIN_TEXT* DOUBLE_RBRACKET
+
+
+/**
+ * Entity
+ * Example:
+ * Chunk(文本块): EntityType
+ * Chunk(文本块)->EntityType, ConceptType:
+ */
+entity ::= entity_head entity_body {
+    methods=[getName toJson]
+}
+
+entity_head ::= basic_structure_declaration {
+    mixin="org.openspg.idea.schema.psi.impl.SchemaNamedElementImpl"
+    implements="org.openspg.idea.schema.psi.SchemaNamedElement"
+    methods=[getName setName getNameIdentifier]
+}
+
+entity_body ::= entity_meta*
+
+/**
+ * EntityMeta
+ * Example:
+ * Chunk(文本块): EntityType
+ *     desc: 文本块
+ */
+entity_meta ::= entity_meta_head entity_meta_body {
+    methods=[toJson]
+}
+entity_meta_head ::= INDENT_META basic_property_declaration
+entity_meta_body ::= property*
+
+/**
+ * Property
+ * Example:
+ * Chunk(文本块): EntityType
+ *     properties :
+ *         belongTo(属于) : Story
+ */
+property ::= property_head property_body {
+    methods=[toJson]
+}
+property_head ::= INDENT_PROP basic_structure_declaration
+property_body ::= property_meta*
+
+/**
+ * Property
+ * Example:
+ * Chunk(文本块): EntityType
+ *     properties :
+ *         belongTo(属于) : Story
+ *             desc: 属于
+ */
+property_meta ::= property_meta_head property_meta_body {
+    methods=[toJson]
+}
+property_meta_head ::= INDENT_PROPMETA basic_property_declaration
+property_meta_body ::= sub_property*
+
+/**
+ * Property
+ * Example:
+ * Disease(疾病): EntityType
+ *     properties:
+ *         commonSymptom(常见症状): Symptom
+ *             properties:
+ *                 desc(描述): Text
+ */
+sub_property ::= sub_property_head sub_property_body {
+    methods=[toJson]
+}
+sub_property_head ::= (INDENT_SUBPROP basic_structure_declaration) {
+    methods=[getPropertyName getPropertyAliasName getPropertyClassList]
+}
+sub_property_body ::= sub_property_meta*
+
+/**
+ * Property
+ * Example:
+ * Disease(疾病): EntityType
+ *     properties:
+ *         commonSymptom(常见症状): Symptom
+ *             properties:
+ *                 desc(描述): Text
+ *                     index: Text
+ */
+sub_property_meta ::= (INDENT_SUBPROPMETA basic_property_declaration) {
+    methods=[getName getValue toJson]
+}
+

@@ -8,8 +8,8 @@ import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.openspg.idea.grammar.psi.SchemaTypes;
-import org.openspg.idea.lang.psi.SchemaEntityInfo;
+import org.openspg.idea.schema.grammar.psi.SchemaTypes;
+import org.openspg.idea.schema.lang.psi.SchemaEntityHead;
 import org.openspg.idea.schema.lexer.SchemaLexerAdapter;
 
 public class SchemaFindUsagesProvider implements FindUsagesProvider {
@@ -19,7 +19,7 @@ public class SchemaFindUsagesProvider implements FindUsagesProvider {
     );
 
     TokenSet identifiers = TokenSet.create(
-            SchemaTypes.ENTITY_NAME, SchemaTypes.ENTITY_CLASS, SchemaTypes.PROPERTY_CLASS
+            SchemaTypes.STRUCTURE_NAME
     );
 
     @Override
@@ -41,7 +41,7 @@ public class SchemaFindUsagesProvider implements FindUsagesProvider {
     @NotNull
     @Override
     public String getType(@NotNull PsiElement element) {
-        if (element instanceof SchemaEntityInfo) {
+        if (element instanceof SchemaEntityHead) {
             return "Schema Entity";
         }
         return "";
@@ -50,8 +50,8 @@ public class SchemaFindUsagesProvider implements FindUsagesProvider {
     @NotNull
     @Override
     public String getDescriptiveName(@NotNull PsiElement element) {
-        if (element instanceof SchemaEntityInfo info) {
-            return info.getEntityName();
+        if (element instanceof SchemaEntityHead head) {
+            return head.getBasicStructureDeclaration().getStructureNameDeclaration().getText();
         }
         return "";
     }

@@ -4,9 +4,9 @@ import com.intellij.ide.projectView.PresentationData;
 import com.intellij.ide.util.treeView.smartTree.TreeElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.openspg.idea.lang.psi.SchemaPropertyMeta;
-import org.openspg.idea.lang.psi.SchemaSubProperty;
 import org.openspg.idea.schema.SchemaIcons;
+import org.openspg.idea.schema.lang.psi.SchemaPropertyMeta;
+import org.openspg.idea.schema.lang.psi.SchemaSubProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,15 +19,15 @@ public class SchemaPropertyMetaStructureViewElement extends AbstractSchemaStruct
 
     @Override
     public String getNullableAlphaSortKey() {
-        return myElement.getPropertyMetaInfo().getName();
+        return myElement.getPropertyMetaHead().getBasicPropertyDeclaration().getName();
     }
 
     @Override
     protected PresentationData createPresentation(SchemaPropertyMeta element) {
         return new PresentationData(
-                element.getPropertyMetaInfo().getName(),
-                element.getPropertyMetaInfo().getValue(),
-                element.getSubPropertyList().isEmpty() ? SchemaIcons.Nodes.EmptyMeta: SchemaIcons.Nodes.PropertyMeta,
+                element.getPropertyMetaHead().getBasicPropertyDeclaration().getName(),
+                element.getPropertyMetaHead().getBasicPropertyDeclaration().getValue(),
+                element.getPropertyMetaBody().getSubPropertyList().isEmpty() ? SchemaIcons.Nodes.EmptyMeta : SchemaIcons.Nodes.PropertyMeta,
                 null
         );
     }
